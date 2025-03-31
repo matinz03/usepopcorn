@@ -43,11 +43,6 @@ This project helped reinforce:
 - API integration and JSON parsing
 - Clean and modular component-based architecture in React
 
----
-
-## 🖼️ Screenshot
-
-<img src="./screenshot.png" alt="usePopcorn App Screenshot" width="100%"/>
 
 ---
 
