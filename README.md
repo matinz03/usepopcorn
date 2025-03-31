@@ -2,10 +2,10 @@
 
 A sleek, single-page movie-rating app built with **React**, powered by an external movie API. Users can search for movies, rate them, and track their watched list—all with data persisting across sessions via **local storage**.
 
-![usePopcorn Screenshot](![image](https://github.com/user-attachments/assets/f6ed050e-9d3a-42cf-8ad3-48c406272c62)
-)
-![usePopcorn Screenshot](![image](https://github.com/user-attachments/assets/9c653c17-330d-46ed-b050-387e7cee6a1b)
-)
+![image](https://github.com/user-attachments/assets/f6ed050e-9d3a-42cf-8ad3-48c406272c62)
+
+![image](https://github.com/user-attachments/assets/9c653c17-330d-46ed-b050-387e7cee6a1b)
+
 
 ---
 
