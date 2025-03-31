@@ -1,20 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import WatchedMoviesList from "./WatchedMoviesList";
 import WatchedSummary from "./WatchedSummary";
 import MovieList from "./MovieList";
 import MovieDetails from "./MovieDetails";
-import { useMovies } from "./useMovies";
 import Search from "./Search";
-import { useLocalStorage } from "./useLocalStorage";
-export const KEY = "c701cd1f";
-
+export const KEY = process.env.REACT_APP_API_KEY;
 export default function App() {
+  const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState("");
-  const { movies, error, isLoading } = useMovies(query);
-  const [watched, setWatched] = useLocalStorage( "watched");
-
+  const [movies, setMovies] = useState([]);
+  const [watched, setWatched] = useState([]);
+  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  useEffect(
+    function () {
+      const controller = new AbortController();
+      async function fetchMovies() {
+        try {
+          setError("");
+          setIsLoading(true);
 
+          const res = await fetch(
+            `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
+            { signal: controller.signal }
+          );
+          if (!res.ok) {
+            throw new Error("Unable to fetch data");
+          }
+          const data = await res.json();
+          if (data.Response === "False") {
+            throw new Error("Movie not found");
+          }
+          setMovies(data.Search);
+          setError("");
+        } catch (err) {
+          if (err.name !== "AbortError") {
+            setError(err.message);
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      }
+      if (query.length <= 3) {
+        setMovies([]);
+        setError("");
+        return;
+      }
+      fetchMovies();
+      return function () {
+        controller.abort();
+      };
+    },
+    [query]
+  );
   function handleSelectedId(id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
   }
@@ -27,7 +65,6 @@ export default function App() {
   function handleDeleteWatched(id) {
     setWatched((movie) => movie.filter((item) => item.imdbID !== id));
   }
-
   return (
     <>
       <NavBar>
