@@ -51,7 +51,35 @@ This project helped reinforce:
 Clone the repo and install dependencies:
 
 ```bash
-git clone https://github.com/your-username/usePopcorn.git
-cd usePopcorn
+git clone https://github.com/matinz03/usepopcorn.git
+cd usepopcorn
 npm install
-npm run dev
+npm start
+```
+
+---
+
+## 📱 Responsive
+
+The web app works from 320px up. Below 700px the two panels stack and each
+scrolls internally, the nav bar reflows to a logo row plus a full-width search
+field, the ten rating stars shrink to fit, tap targets grow on touch pointers,
+and safe-area insets keep content clear of notches. The desktop layout is
+unchanged.
+
+---
+
+## 🍎🤖 Native apps
+
+A Flutter port lives in [`mobile/`](mobile/) and builds for both iOS and
+Android from the same Dart source — see [`mobile/README.md`](mobile/README.md).
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```
+
+CI (`.github/workflows/ci.yml`) builds the React app, runs the Flutter
+analyzer and tests, builds the Android APK/AAB, and builds the iOS app on a
+macOS runner, uploading each as a workflow artifact.
