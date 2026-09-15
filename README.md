@@ -61,11 +61,25 @@ npm start
 
 ## 📱 Responsive
 
-The web app works from 320px up. Below 700px the two panels stack and each
+The web app works from 320px up. Below 900px the two panels stack and each
 scrolls internally, the nav bar reflows to a logo row plus a full-width search
 field, the ten rating stars shrink to fit, tap targets grow on touch pointers,
-and safe-area insets keep content clear of notches. The desktop layout is
-unchanged.
+and safe-area insets keep content clear of notches.
+
+---
+
+## ⌨️ Keyboard
+
+| Key | Action |
+| --- | --- |
+| <kbd>/</kbd> | Focus the search field |
+| <kbd>↑</kbd> <kbd>↓</kbd> | Move through the results |
+| <kbd>↵</kbd> | Open the focused movie |
+| <kbd>esc</kbd> | Close details, then clear the search |
+
+The search field is a combobox driving the results listbox, so a screen reader
+announces each result as the arrow keys move over it. The star rating is a
+single focusable slider that responds to arrow keys, Home and End.
 
 ---
 

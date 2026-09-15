@@ -1,25 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme.dart';
 
-/// Tap-to-rate stars, the Flutter counterpart of the web app's StarRating.
+const _labels = [
+  'Terrible',
+  'Bad',
+  'Poor',
+  'Weak',
+  'Okay',
+  'Fine',
+  'Good',
+  'Great',
+  'Excellent',
+  'Masterpiece',
+];
+
+/// Tap-to-rate stars.
 ///
-/// There is no hover on a phone, so the preview-on-hover behaviour is replaced
-/// by dragging across the row, which reads the rating under the finger.
+/// There is no hover on a phone, so the web version's preview-on-hover is
+/// replaced by dragging across the row, which reads the rating under the
+/// finger and ticks as it changes.
 class StarRating extends StatefulWidget {
   const StarRating({
     super.key,
     this.maxRating = 10,
     this.defaultRating = 0,
-    this.size = 28,
-    this.color = AppColors.star,
     required this.onRated,
   });
 
   final int maxRating;
   final int defaultRating;
-  final double size;
-  final Color color;
   final ValueChanged<int> onRated;
 
   @override
@@ -31,36 +42,38 @@ class _StarRatingState extends State<StarRating> {
   int _preview = 0;
 
   void _setRating(int value) {
-    if (value == _rating) return;
-    setState(() => _rating = value);
-    widget.onRated(value);
+    final next = value.clamp(1, widget.maxRating);
+    if (next == _rating) return;
+    HapticFeedback.selectionClick();
+    setState(() => _rating = next);
+    widget.onRated(next);
   }
 
   @override
   Widget build(BuildContext context) {
     final shown = _preview > 0 ? _preview : _rating;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Ten stars at a fixed size overflow a narrow phone, so shrink them to
-        // fit the space actually available, leaving room for the number.
-        const labelWidth = 34.0;
-        const gap = 12.0;
-        final available = constraints.maxWidth - labelWidth - gap;
-        final starSize = (available / widget.maxRating).clamp(
-          14.0,
-          widget.size,
-        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Ten stars at a fixed size overflow a narrow phone, so shrink
+            // them to the space actually available.
+            final starSize = (constraints.maxWidth / widget.maxRating).clamp(
+              16.0,
+              32.0,
+            );
 
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            GestureDetector(
+            return GestureDetector(
               behavior: HitTestBehavior.opaque,
               onHorizontalDragUpdate: (d) {
                 final index = (d.localPosition.dx / starSize).floor() + 1;
                 final clamped = index.clamp(1, widget.maxRating);
-                if (clamped != _preview) setState(() => _preview = clamped);
+                if (clamped != _preview) {
+                  HapticFeedback.selectionClick();
+                  setState(() => _preview = clamped);
+                }
               },
               onHorizontalDragEnd: (_) {
                 if (_preview > 0) _setRating(_preview);
@@ -80,34 +93,65 @@ class _StarRatingState extends State<StarRating> {
                       child: SizedBox(
                         width: starSize,
                         height: starSize,
-                        child: Icon(
-                          filled
-                              ? Icons.star_rounded
-                              : Icons.star_border_rounded,
-                          size: starSize,
-                          color: widget.color,
+                        child: AnimatedScale(
+                          scale: filled ? 1 : 0.88,
+                          duration: AppMotion.fast,
+                          // Same glyph throughout, dimmed when unfilled, so
+                          // the row keeps one silhouette as it fills.
+                          child: Icon(
+                            Icons.star_rounded,
+                            size: starSize,
+                            color:
+                                filled
+                                    ? AppColors.gold
+                                    : Colors.white.withValues(alpha: 0.16),
+                          ),
                         ),
                       ),
                     ),
                   );
                 }),
               ),
-            ),
-            const SizedBox(width: gap),
-            SizedBox(
-              width: labelWidth,
-              child: Text(
-                shown > 0 ? '$shown' : '',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.text,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        AnimatedSwitcher(
+          duration: AppMotion.fast,
+          child:
+              shown > 0
+                  ? Row(
+                    key: ValueKey(shown),
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        '$shown',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.gold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _labels[((shown / widget.maxRating) * 10).round() - 1],
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textMid,
+                        ),
+                      ),
+                    ],
+                  )
+                  : Text(
+                    'Pick a score from 1 to ${widget.maxRating}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textLow,
+                    ),
+                  ),
+        ),
+      ],
     );
   }
 }

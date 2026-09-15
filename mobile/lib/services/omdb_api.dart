@@ -14,23 +14,38 @@ class OmdbException implements Exception {
   String toString() => message;
 }
 
+/// One page of search results plus how many exist in total.
+class SearchPage {
+  const SearchPage({required this.movies, required this.totalResults});
+
+  final List<MovieSummary> movies;
+  final int totalResults;
+}
+
 class OmdbApi {
   OmdbApi({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
 
-  Future<List<MovieSummary>> search(String query) async {
+  Future<SearchPage> search(String query, {int page = 1}) async {
     final uri = Uri.https('www.omdbapi.com', '/', {
       'apikey': omdbKey,
       's': query,
+      'page': '$page',
     });
     final data = await _get(uri);
     final results = data['Search'];
-    if (results is! List) return const [];
-    return results
-        .whereType<Map<String, dynamic>>()
-        .map(MovieSummary.fromJson)
-        .toList(growable: false);
+
+    return SearchPage(
+      movies:
+          results is List
+              ? results
+                  .whereType<Map<String, dynamic>>()
+                  .map(MovieSummary.fromJson)
+                  .toList(growable: false)
+              : const [],
+      totalResults: int.tryParse('${data['totalResults']}') ?? 0,
+    );
   }
 
   Future<MovieDetails> details(String imdbID) async {
@@ -50,7 +65,7 @@ class OmdbApi {
     }
 
     if (response.statusCode != 200) {
-      throw const OmdbException('Unable to fetch data');
+      throw const OmdbException('Unable to reach the movie service');
     }
 
     final decoded = jsonDecode(response.body);

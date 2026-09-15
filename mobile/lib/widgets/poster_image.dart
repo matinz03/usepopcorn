@@ -11,7 +11,7 @@ class PosterImage extends StatelessWidget {
     this.width,
     this.height,
     this.fit = BoxFit.cover,
-    this.borderRadius = 4,
+    this.borderRadius = AppRadius.sm,
   });
 
   final String? url;
@@ -39,7 +39,7 @@ class PosterImage extends StatelessWidget {
                   if (wasSynchronouslyLoaded) return child;
                   return AnimatedOpacity(
                     opacity: frame == null ? 0 : 1,
-                    duration: const Duration(milliseconds: 200),
+                    duration: AppMotion.med,
                     child: child,
                   );
                 },
@@ -63,13 +63,13 @@ class _Placeholder extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      color: AppColors.background100,
+      color: AppColors.surface3,
       alignment: Alignment.center,
       child: FittedBox(
         fit: BoxFit.scaleDown,
         child: Padding(
           padding: const EdgeInsets.all(8),
-          child: Text('🍿', style: TextStyle(fontSize: (width ?? 40) * 0.5)),
+          child: Text('🍿', style: TextStyle(fontSize: (width ?? 40) * 0.45)),
         ),
       ),
     );
