@@ -1,15 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+
 export function useKey(action, key, capture) {
+  // Keep the latest callback in a ref so the listener is attached once instead
+  // of being torn down and re-added on every render.
+  const actionRef = useRef(action);
+  actionRef.current = action;
+
   useEffect(
     function () {
       function callback(e) {
-        if (!capture) {
-          if (e.code?.toLowerCase() !== key?.toLowerCase()) action();
-        } else {
-          if (e.code?.toLowerCase() === key?.toLowerCase()) {
-            action();
-          }
-        }
+        const matches = e.code?.toLowerCase() === key?.toLowerCase();
+        if (capture ? matches : !matches) actionRef.current();
       }
 
       document.addEventListener("keydown", callback);
@@ -17,6 +18,6 @@ export function useKey(action, key, capture) {
         document.removeEventListener("keydown", callback);
       };
     },
-    [action, key, capture]
+    [key, capture]
   );
 }

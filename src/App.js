@@ -1,32 +1,59 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import WatchedMoviesList from "./WatchedMoviesList";
 import WatchedSummary from "./WatchedSummary";
 import MovieList from "./MovieList";
 import MovieDetails from "./MovieDetails";
-import { useMovies } from "./useMovies";
+import Loader from "./Loader";
 import Search from "./Search";
+import { useMovies } from "./useMovies";
 import { useLocalStorage } from "./useLocalStorage";
-export const KEY = "c701cd1f";
 
 export default function App() {
   const [query, setQuery] = useState("");
   const { movies, error, isLoading } = useMovies(query);
-  const [watched, setWatched] = useLocalStorage( "watched");
+  const [watched, setWatched] = useLocalStorage("watched");
 
   const [selectedId, setSelectedId] = useState(null);
+  const detailsRef = useRef(null);
 
-  function handleSelectedId(id) {
+  // Stable identities keep the memoized list rows from re-rendering on every
+  // keystroke in the search box.
+  const handleSelectedId = useCallback(function (id) {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
-  }
-  function handleCloseBtn() {
+  }, []);
+
+  const handleCloseBtn = useCallback(function () {
     setSelectedId(null);
-  }
-  function handleAddMovie(movie) {
-    setWatched([...watched, movie]);
-  }
-  function handleDeleteWatched(id) {
-    setWatched((movie) => movie.filter((item) => item.imdbID !== id));
-  }
+  }, []);
+
+  const handleAddMovie = useCallback(
+    function (movie) {
+      setWatched((watched) => [...watched, movie]);
+    },
+    [setWatched]
+  );
+
+  const handleDeleteWatched = useCallback(
+    function (id) {
+      setWatched((movie) => movie.filter((item) => item.imdbID !== id));
+    },
+    [setWatched]
+  );
+
+  // On phones the two panels stack, so a freshly opened movie would otherwise
+  // land below the fold.
+  useEffect(
+    function () {
+      if (!selectedId) return;
+      if (window.matchMedia("(max-width: 700px)").matches) {
+        detailsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    },
+    [selectedId]
+  );
 
   return (
     <>
@@ -36,29 +63,23 @@ export default function App() {
       </NavBar>
 
       <Main>
-        <Box>
+        <Box label="Search results">
           {isLoading && <Loader />}
           {!isLoading && !error && (
-            <MovieList
-              movies={movies}
-              handleSelectedId={handleSelectedId}
-              handleCloseBtn={handleCloseBtn}
-            />
+            <MovieList movies={movies} handleSelectedId={handleSelectedId} />
           )}
-          {error && <ErrorMessage message={error} />}
+          {!isLoading && error && <ErrorMessage message={error} />}
         </Box>
 
-        <Box>
+        <Box label="Watched movies" innerRef={detailsRef}>
           {selectedId ? (
-            <>
-              <MovieDetails
-                selectedId={selectedId}
-                onCloseBtn={handleCloseBtn}
-                onAddMovie={handleAddMovie}
-                watched={watched}
-                key={selectedId}
-              />
-            </>
+            <MovieDetails
+              selectedId={selectedId}
+              onCloseBtn={handleCloseBtn}
+              onAddMovie={handleAddMovie}
+              watched={watched}
+              key={selectedId}
+            />
           ) : (
             <>
               <WatchedSummary watched={watched} />
@@ -73,13 +94,11 @@ export default function App() {
     </>
   );
 }
-export function Loader() {
-  return <p className="loader">Loading...</p>;
-}
+
 function ErrorMessage({ message }) {
   return (
-    <p className="error">
-      <span>🛑</span>
+    <p className="error" role="alert">
+      <span aria-hidden="true">🛑</span>
       {message}
     </p>
   );
@@ -97,7 +116,7 @@ function NavBar({ children }) {
 function Logo() {
   return (
     <div className="logo">
-      <span role="img">🍿</span>
+      <span aria-hidden="true">🍿</span>
       <h1>usePopcorn</h1>
     </div>
   );
@@ -115,12 +134,17 @@ function Main({ children }) {
   return <main className="main">{children}</main>;
 }
 
-function Box({ children }) {
+function Box({ children, label, innerRef }) {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className="box">
-      <button className="btn-toggle" onClick={() => setIsOpen((open) => !open)}>
+    <div className="box" ref={innerRef}>
+      <button
+        className="btn-toggle"
+        aria-expanded={isOpen}
+        aria-label={`${isOpen ? "Collapse" : "Expand"} ${label}`}
+        onClick={() => setIsOpen((open) => !open)}
+      >
         {isOpen ? "–" : "+"}
       </button>
 

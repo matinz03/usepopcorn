@@ -1,23 +1,17 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import PropTypes from "prop-types";
+
 const containerStyle = {
   display: "flex",
   alignItems: "center",
   gap: "16px",
+  flexWrap: "wrap",
 };
 const starContainerStyle = {
   display: "flex",
 };
-StarRating.propTypes = {
-  maxRating: PropTypes.number,
-  color: PropTypes.string,
-  size: PropTypes.number,
-  className: PropTypes.string,
-  messages: PropTypes.array,
-  defaultRating: PropTypes.number,
-  onSetRated: PropTypes.func,
-};
-export default function StarRating({
+
+function StarRating({
   maxRating = 5,
   color = "yellow",
   size = 24,
@@ -28,14 +22,16 @@ export default function StarRating({
 }) {
   const [filled, setFilled] = useState(defaultRating);
   const [tempFilling, setTempFilling] = useState(0);
+
   const textStyle = {
     lineHeight: "1",
     margin: "0",
     fontSize: `${size / 1.8}px`,
   };
+
   function handleFilled(rate) {
     setFilled(rate);
-    onSetRated(rate);
+    onSetRated?.(rate);
   }
 
   return (
@@ -51,7 +47,8 @@ export default function StarRating({
             color={color}
             size={size}
             className={className}
-          ></Star>
+            label={`Rate ${i + 1} out of ${maxRating}`}
+          />
         ))}
       </div>
       <p style={textStyle}>
@@ -62,20 +59,52 @@ export default function StarRating({
     </div>
   );
 }
-function Star({ full, onRate, onHoverIn, onHoverOut, color, size, className }) {
-  const startStyle = {
-    width: `${size}px`,
-    height: `${size}px`,
+
+StarRating.propTypes = {
+  maxRating: PropTypes.number,
+  color: PropTypes.string,
+  size: PropTypes.number,
+  className: PropTypes.string,
+  messages: PropTypes.array,
+  defaultRating: PropTypes.number,
+  onSetRated: PropTypes.func,
+};
+
+function Star({
+  full,
+  onRate,
+  onHoverIn,
+  onHoverOut,
+  color,
+  size,
+  className,
+  label,
+}) {
+  const starStyle = {
+    // Ten stars at a fixed 24px overflow a 320px-wide phone, so let them shrink
+    // with the viewport while keeping the desktop size as the ceiling.
+    width: `min(${size}px, 7.5vw)`,
+    height: `min(${size}px, 7.5vw)`,
     display: "block",
     cursor: "pointer",
+    touchAction: "manipulation",
   };
+
   return (
     <span
       role="button"
-      style={startStyle}
-      onClick={() => onRate()}
-      onMouseEnter={() => onHoverIn()}
-      onMouseLeave={() => onHoverOut()}
+      aria-label={label}
+      tabIndex={0}
+      style={starStyle}
+      onClick={onRate}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onRate();
+        }
+      }}
+      onMouseEnter={onHoverIn}
+      onMouseLeave={onHoverOut}
       className={className}
     >
       {full ? (
@@ -97,7 +126,7 @@ function Star({ full, onRate, onHoverIn, onHoverOut, color, size, className }) {
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
-            strokeWidth="{2}"
+            strokeWidth="2"
             d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
           />
         </svg>
@@ -105,3 +134,5 @@ function Star({ full, onRate, onHoverIn, onHoverOut, color, size, className }) {
     </span>
   );
 }
+
+export default memo(StarRating);

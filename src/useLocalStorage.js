@@ -1,16 +1,23 @@
 import { useState, useEffect } from "react";
 
-export function useLocalStorage(key) {
+export function useLocalStorage(key, initialValue = []) {
   const [value, setValue] = useState(function () {
-    return JSON.parse(localStorage.getItem(key)) || [];
+    try {
+      const stored = localStorage.getItem(key);
+      return stored ? JSON.parse(stored) : initialValue;
+    } catch {
+      // Corrupted JSON or storage blocked (private mode, disabled cookies).
+      return initialValue;
+    }
   });
 
   useEffect(
     function () {
-      localStorage.setItem(key, JSON.stringify(value));
-      return function () {
-        localStorage.removeItem(key);
-      };
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch {
+        // Quota exceeded or storage unavailable - keep the app running.
+      }
     },
     [value, key]
   );
