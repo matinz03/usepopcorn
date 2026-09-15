@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/movie.dart';
+import '../state/watched_store.dart';
 import '../theme.dart';
+import 'chip.dart';
 import 'poster_image.dart';
 
 class WatchedList extends StatelessWidget {
@@ -21,21 +23,16 @@ class WatchedList extends StatelessWidget {
     return ListView.separated(
       shrinkWrap: shrinkWrap,
       physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.zero,
       itemCount: movies.length,
-      separatorBuilder:
-          (_, _) => const Divider(
-            height: 1,
-            thickness: 1,
-            color: AppColors.background100,
-          ),
+      separatorBuilder: (_, _) => const Divider(),
       itemBuilder: (context, index) {
         final movie = movies[index];
         return Dismissible(
           key: ValueKey(movie.imdbID),
           direction: DismissDirection.endToStart,
           background: Container(
-            color: AppColors.redDark,
+            color: AppColors.redDim,
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
             child: const Icon(Icons.delete_outline, color: Colors.white),
@@ -59,12 +56,14 @@ class _WatchedRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final added = relativeTime(movie.addedAt);
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 6, 12),
       child: Row(
         children: [
-          PosterImage(url: movie.poster, width: 40, height: 60),
-          const SizedBox(width: 16),
+          PosterImage(url: movie.poster, width: 46, height: 69),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,67 +72,49 @@ class _WatchedRow extends StatelessWidget {
                 Text(
                   movie.title,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 6),
-                // Wrap keeps the three stats from overflowing a narrow row.
+                const SizedBox(height: 7),
+                // Wrap keeps four facts from overflowing a narrow row.
                 Wrap(
-                  spacing: 14,
-                  runSpacing: 4,
+                  spacing: 6,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _Stat(icon: '⭐️', value: movie.imdbRating.toString()),
-                    _Stat(icon: '🌟', value: movie.userRating.toString()),
-                    _Stat(icon: '⏳', value: '${movie.runtime} min'),
+                    MetaChip(
+                      icon: '🌟',
+                      label: '${movie.userRating}',
+                      tone: ChipTone.star,
+                    ),
+                    MetaChip(icon: '⭐️', label: '${movie.imdbRating}'),
+                    MetaChip(icon: '⏳', label: '${movie.runtime} min'),
+                    if (added != null)
+                      Text(
+                        'Added $added',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textLow,
+                        ),
+                      ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
           IconButton(
             onPressed: onDelete,
             tooltip: 'Remove ${movie.title}',
             visualDensity: VisualDensity.compact,
-            icon: Container(
-              width: 26,
-              height: 26,
-              decoration: const BoxDecoration(
-                color: AppColors.red,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.close,
-                size: 16,
-                color: AppColors.background900,
-              ),
+            icon: const Icon(
+              Icons.close_rounded,
+              size: 18,
+              color: AppColors.textLow,
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.icon, required this.value});
-
-  final String icon;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 13)),
-        const SizedBox(width: 5),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 14, color: AppColors.textDark),
-        ),
-      ],
     );
   }
 }

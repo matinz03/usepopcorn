@@ -10,45 +10,41 @@ class WatchedSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasMovies = !store.isEmpty;
+
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 56, 16),
-      decoration: BoxDecoration(
-        color: AppColors.background100,
-        borderRadius: BorderRadius.circular(9),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.line)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          const Text(
-            'MOVIES YOU WATCHED',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
+          _Stat(
+            icon: '🎬',
+            value: '${store.length}',
+            label: 'Movies',
+            hint: store.length == 1 ? 'title' : 'titles',
           ),
-          const SizedBox(height: 10),
-          // Wrap so four stats reflow onto two rows on a narrow screen
-          // instead of overflowing.
-          Wrap(
-            spacing: 20,
-            runSpacing: 8,
-            children: [
-              _Stat(icon: '#️⃣', value: '${store.movies.length} movies'),
-              _Stat(
-                icon: '⭐️',
-                value: store.averageImdbRating.toStringAsFixed(2),
-              ),
-              _Stat(
-                icon: '🌟',
-                value: store.averageUserRating.toStringAsFixed(2),
-              ),
-              _Stat(
-                icon: '⏳',
-                value: '${store.averageRuntime.toStringAsFixed(0)} min',
-              ),
-            ],
+          const _StatDivider(),
+          _Stat(
+            icon: '🌟',
+            value: hasMovies ? store.averageUserRating.toStringAsFixed(1) : '–',
+            label: 'Your rating',
+            hint: 'average',
+          ),
+          const _StatDivider(),
+          _Stat(
+            icon: '⭐️',
+            value: hasMovies ? store.averageImdbRating.toStringAsFixed(1) : '–',
+            label: 'IMDb',
+            hint: 'average',
+          ),
+          const _StatDivider(),
+          _Stat(
+            // Total time watched says something a runtime average never could.
+            icon: '⏳',
+            value: formatDuration(store.totalRuntime),
+            label: 'Watch time',
+            hint: 'total',
           ),
         ],
       ),
@@ -56,24 +52,71 @@ class WatchedSummary extends StatelessWidget {
   }
 }
 
+class _StatDivider extends StatelessWidget {
+  const _StatDivider();
+
+  @override
+  Widget build(BuildContext context) => const SizedBox(
+    width: 1,
+    height: 62,
+    child: ColoredBox(color: AppColors.line),
+  );
+}
+
 class _Stat extends StatelessWidget {
-  const _Stat({required this.icon, required this.value});
+  const _Stat({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.hint,
+  });
 
   final String icon;
   final String value;
+  final String label;
+  final String hint;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(icon, style: const TextStyle(fontSize: 15)),
-        const SizedBox(width: 6),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(icon, style: const TextStyle(fontSize: 14)),
+            const SizedBox(height: 5),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.4,
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  color: AppColors.textMid,
+                ),
+              ),
+            ),
+            Text(
+              hint,
+              style: const TextStyle(fontSize: 10, color: AppColors.textLow),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

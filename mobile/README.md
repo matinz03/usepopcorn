@@ -12,9 +12,19 @@ of shrinking the desktop one.
 | ≥ 900 dp (tablets, foldables, landscape) | The two panels sit side by side and details open in the right-hand panel, matching the web app. |
 
 Also handled: safe-area insets, the OS font-scale setting (capped at 1.3× so
-dense rows stay intact), landscape phones (the poster is capped at a share of
-the screen height so the text is never pushed off), and swipe-to-delete on the
-watched list.
+dense rows stay intact), and swipe-to-delete on the watched list.
+
+## Interface
+
+- Skeleton rows while a search runs, instead of a spinner.
+- Undo on every delete, as a snackbar action.
+- Sorting for the watched list: added, your rating, IMDb, runtime, title.
+- "Load more" pagination — OMDb pages results 10 at a time.
+- An "In your list" marker on results already rated.
+- A details screen with a blurred-poster backdrop, genre chips, certificate
+  and Metascore, and a poster that flies from the row into place.
+- Haptic ticks as the star rating changes.
+- Total watch time in the stats, and a date on each watched entry.
 
 ## Structure
 
@@ -23,12 +33,12 @@ lib/
   config.dart                  API key, debounce and breakpoint constants
   theme.dart                   Palette shared with the web app's CSS variables
   models/movie.dart            Search / details / watched models + OMDb "N/A" handling
-  services/omdb_api.dart       HTTP client, typed errors
+  services/omdb_api.dart       HTTP client, typed errors, paged search
   state/
-    search_controller.dart     Debounced search, stale-response guard
-    watched_store.dart         Watched list persisted with shared_preferences
+    search_controller.dart     Debounced search, paging, stale-response guard
+    watched_store.dart         Watched list + sorting, persisted with shared_preferences
   screens/                     Home (responsive) and the phone details screen
-  widgets/                     Panels, lists, star rating, poster
+  widgets/                     Panels, lists, chips, skeletons, star rating, poster
 ```
 
 Behaviour carried over from the web app: searches debounce by 400 ms and need
@@ -40,7 +50,7 @@ watched list survives a restart and tolerates corrupted storage.
 ```bash
 flutter pub get
 flutter run                      # attached device or simulator
-flutter test                     # 11 widget + unit tests
+flutter test                     # 20 widget + unit tests
 flutter analyze
 ```
 
