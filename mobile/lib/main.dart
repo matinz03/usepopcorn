@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'screens/home_screen.dart';
+import 'screens/app_shell.dart';
 import 'services/omdb_api.dart';
 import 'state/watched_store.dart';
 import 'theme.dart';
@@ -50,14 +50,14 @@ class _UsePopcornAppState extends State<UsePopcornApp> {
       title: 'usePopcorn',
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      // Respect the OS font-size setting, but cap it so the densest rows stay
-      // readable rather than overflowing.
+      // Respect the OS font-size setting, but cap it so the densest text stays
+      // inside its box rather than overflowing.
       builder:
           (context, child) => MediaQuery.withClampedTextScaling(
             maxScaleFactor: 1.3,
             child: child!,
           ),
-      home: HomeScreen(api: _api, store: _store),
+      home: AppShell(api: _api, store: _store),
     );
   }
 }

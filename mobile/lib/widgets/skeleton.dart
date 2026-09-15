@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
+import 'movie_card.dart';
 
 /// A shimmering placeholder block.
 ///
 /// A skeleton that matches the final layout reads as "almost there" where a
-/// spinner reads as "nothing is happening", and it stops the panel from
-/// collapsing and reflowing when results land.
+/// spinner reads as "nothing is happening", and it stops the page from
+/// reflowing when results land.
 class Skeleton extends StatefulWidget {
   const Skeleton({
     super.key,
@@ -66,66 +67,65 @@ class _SkeletonState extends State<Skeleton>
   }
 }
 
-class MovieListSkeleton extends StatelessWidget {
-  const MovieListSkeleton({super.key, this.rows = 6});
+/// Poster-grid placeholder, laid out exactly like the real grid.
+class GridSkeleton extends StatelessWidget {
+  const GridSkeleton({super.key, this.count = 12});
 
-  final int rows;
+  final int count;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        rows,
-        (_) => Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: AppColors.line)),
-          ),
-          child: const Row(
-            children: [
-              Skeleton(width: 46, height: 69),
-              SizedBox(width: 14),
-              Expanded(
-                child: Column(
+    return LayoutBuilder(
+      builder:
+          (context, constraints) => GridView.builder(
+            padding: EdgeInsets.zero,
+            physics: const NeverScrollableScrollPhysics(),
+            shrinkWrap: true,
+            gridDelegate: posterGridDelegate(constraints.maxWidth),
+            itemCount: count,
+            itemBuilder:
+                (context, _) => const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Skeleton(width: 160, height: 13),
-                    SizedBox(height: 9),
-                    Skeleton(width: 80, height: 11),
+                    Expanded(
+                      child: Skeleton(radius: AppRadius.md, height: 1000),
+                    ),
+                    SizedBox(height: 10),
+                    Skeleton(height: 13, width: 120),
+                    SizedBox(height: 8),
+                    Skeleton(height: 11, width: 54),
                   ],
                 ),
-              ),
-            ],
           ),
-        ),
-      ),
     );
   }
 }
 
-class DetailsSkeleton extends StatelessWidget {
-  const DetailsSkeleton({super.key});
+class MoviePageSkeleton extends StatelessWidget {
+  const MoviePageSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return ListView(
+      padding: EdgeInsets.zero,
       children: [
-        Skeleton(height: 190, radius: 0),
+        const Skeleton(height: 220, radius: 0),
         Padding(
-          padding: EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Skeleton(width: 190, height: 24),
-              SizedBox(height: 14),
-              Skeleton(width: 120, height: 12),
-              SizedBox(height: 20),
-              Skeleton(height: 96, radius: AppRadius.lg),
-              SizedBox(height: 20),
-              Skeleton(height: 12),
+            children: const [
+              Skeleton(height: 34, width: 220),
+              SizedBox(height: 16),
+              Skeleton(height: 13, width: 150),
+              SizedBox(height: 26),
+              Skeleton(height: 170, radius: AppRadius.xl),
+              SizedBox(height: 26),
+              Skeleton(height: 13),
               SizedBox(height: 10),
-              Skeleton(width: 220, height: 12),
+              Skeleton(height: 13),
+              SizedBox(height: 10),
+              Skeleton(height: 13, width: 200),
             ],
           ),
         ),

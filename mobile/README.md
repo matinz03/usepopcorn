@@ -4,25 +4,32 @@ A native port of the usePopcorn React app in the repository root. Same movie
 API, same watched list, same palette; the layout adapts to the device instead
 of shrinking the desktop one.
 
-## Layout
+## Screens
 
-| Width | Layout |
+Two tabs, with the movie opening as its own page on top of them:
+
+| Screen | What it holds |
 | --- | --- |
-| < 900 dp (phones) | One column. Both panels stack in a single scroll view; tapping a result pushes the details onto its own screen, so the system back gesture works. |
-| ≥ 900 dp (tablets, foldables, landscape) | The two panels sit side by side and details open in the right-hand panel, matching the web app. |
+| Discover | The search field and the results, as a grid of posters |
+| My list | The watched list with its stats and sorting |
+| Movie | One movie, full screen, with its own backdrop and the rating card |
 
-Also handled: safe-area insets, the OS font-scale setting (capped at 1.3× so
-dense rows stay intact), and swipe-to-delete on the watched list.
+The grid runs from two columns on the narrowest phone up to six on a tablet.
+Nothing nests its own scroll area, so no row is ever sliced at a panel edge.
+
+Also handled: safe-area insets, the OS font-scale setting (capped at 1.3x, with
+the stat cards sized from the scale rather than an aspect ratio so they cannot
+overflow), and swipe-to-delete on the watched list.
 
 ## Interface
 
-- Skeleton rows while a search runs, instead of a spinner.
+- Skeleton cards while a search runs, laid out exactly like the real grid.
 - Undo on every delete, as a snackbar action.
 - Sorting for the watched list: added, your rating, IMDb, runtime, title.
-- "Load more" pagination — OMDb pages results 10 at a time.
-- An "In your list" marker on results already rated.
-- A details screen with a blurred-poster backdrop, genre chips, certificate
-  and Metascore, and a poster that flies from the row into place.
+- "Load more" pagination - OMDb pages results 10 at a time.
+- A score badge on the poster of anything already rated.
+- A movie page with a blurred-poster backdrop, genre chips, certificate and
+  Metascore, and a poster that flies from the grid into place.
 - Haptic ticks as the star rating changes.
 - Total watch time in the stats, and a date on each watched entry.
 
@@ -37,8 +44,8 @@ lib/
   state/
     search_controller.dart     Debounced search, paging, stale-response guard
     watched_store.dart         Watched list + sorting, persisted with shared_preferences
-  screens/                     Home (responsive) and the phone details screen
-  widgets/                     Panels, lists, chips, skeletons, star rating, poster
+  screens/                     App shell (tabs), Discover, My list, Movie
+  widgets/                     Cards, chips, skeletons, star rating, poster, buttons
 ```
 
 Behaviour carried over from the web app: searches debounce by 400 ms and need
@@ -50,7 +57,7 @@ watched list survives a restart and tolerates corrupted storage.
 ```bash
 flutter pub get
 flutter run                      # attached device or simulator
-flutter test                     # 20 widget + unit tests
+flutter test                     # 22 widget + unit tests
 flutter analyze
 ```
 

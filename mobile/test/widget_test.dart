@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:usepopcorn/models/movie.dart';
-import 'package:usepopcorn/screens/home_screen.dart';
+import 'package:usepopcorn/screens/app_shell.dart';
 import 'package:usepopcorn/services/omdb_api.dart';
 import 'package:usepopcorn/state/watched_store.dart';
 import 'package:usepopcorn/theme.dart';
@@ -79,16 +79,34 @@ WatchedMovie watchedMovie({
   addedAt: addedAt,
 );
 
-Widget wrap(Widget child, {Size size = const Size(390, 844)}) => MediaQuery(
-  data: MediaQueryData(size: size),
-  child: MaterialApp(theme: buildAppTheme(), home: child),
-);
+Widget wrap(Widget child) => MaterialApp(theme: buildAppTheme(), home: child);
+
+/// Sets the real layout size - MediaQuery alone does not move the test view.
+void surface(WidgetTester tester, Size size) {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+}
 
 /// Types a query and lets the debounce and the response settle.
 Future<void> searchFor(WidgetTester tester, String query) async {
   await tester.enterText(find.byType(TextField), query);
   await tester.pump(const Duration(seconds: 1));
   await tester.pump();
+}
+
+/// The watched list lives behind its own tab.
+///
+/// Tapped by icon because IndexedStack builds both tabs up front, so the words
+/// "My list" also exist as the offstage screen's heading.
+Future<void> goToList(WidgetTester tester) async {
+  await tester.tap(find.byIcon(Icons.bookmark_outline_rounded));
+  await tester.pumpAndSettle();
+}
+
+Future<void> openFirstResult(WidgetTester tester) async {
+  await tester.tap(find.text('Inception'));
+  await tester.pumpAndSettle();
 }
 
 Finder ratingStars() => find.descendant(
@@ -99,36 +117,33 @@ Finder ratingStars() => find.descendant(
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  group('search', () {
-    testWidgets('shows a prompt before anything has been searched', (
-      tester,
-    ) async {
+  group('discover', () {
+    testWidgets('opens on an invitation to search', (tester) async {
+      surface(tester, const Size(390, 844));
       await tester.pumpWidget(
-        wrap(HomeScreen(api: fakeApi(), store: WatchedStore())),
+        wrap(AppShell(api: fakeApi(), store: WatchedStore())),
       );
-      expect(find.text('Find something to watch'), findsOneWidget);
+      expect(find.text('What are you watching tonight?'), findsOneWidget);
     });
 
     testWidgets('a short query never triggers a request', (tester) async {
+      surface(tester, const Size(390, 844));
       var requests = 0;
       final api = fakeApi(onRequest: (_) => requests++);
 
-      await tester.pumpWidget(
-        wrap(HomeScreen(api: api, store: WatchedStore())),
-      );
+      await tester.pumpWidget(wrap(AppShell(api: api, store: WatchedStore())));
       await searchFor(tester, 'in');
 
       expect(requests, 0);
-      expect(find.text('Find something to watch'), findsOneWidget);
+      expect(find.text('What are you watching tonight?'), findsOneWidget);
     });
 
     testWidgets('typing debounces into a single request', (tester) async {
+      surface(tester, const Size(390, 844));
       var requests = 0;
       final api = fakeApi(onRequest: (_) => requests++);
 
-      await tester.pumpWidget(
-        wrap(HomeScreen(api: api, store: WatchedStore())),
-      );
+      await tester.pumpWidget(wrap(AppShell(api: api, store: WatchedStore())));
 
       for (final text in ['ince', 'incep', 'incepti', 'inception']) {
         await tester.enterText(find.byType(TextField), text);
@@ -138,10 +153,11 @@ void main() {
 
       expect(requests, 1);
       expect(find.text('Inception'), findsOneWidget);
-      expect(find.text('24 results', findRichText: true), findsOneWidget);
+      expect(find.text('24 matches'), findsOneWidget);
     });
 
     testWidgets('load more appends the next page', (tester) async {
+      surface(tester, const Size(390, 1200));
       final pages = <int>[];
       final api = fakeApi(
         onRequest: (uri) {
@@ -152,14 +168,10 @@ void main() {
         },
       );
 
-      await tester.pumpWidget(
-        wrap(HomeScreen(api: api, store: WatchedStore())),
-      );
+      await tester.pumpWidget(wrap(AppShell(api: api, store: WatchedStore())));
       await searchFor(tester, 'inception');
       expect(find.text('Showing 2 of 24'), findsOneWidget);
 
-      await tester.ensureVisible(find.text('Load more'));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('Load more'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
@@ -169,50 +181,68 @@ void main() {
       expect(find.text('Inception'), findsNWidgets(2));
     });
 
-    testWidgets('marks results already on the watched list', (tester) async {
+    testWidgets('a result already rated shows its score on the poster', (
+      tester,
+    ) async {
+      surface(tester, const Size(390, 844));
       final store = WatchedStore();
-      await store.add(watchedMovie());
+      await store.add(watchedMovie()); // The Matrix, rated 9
 
-      await tester.pumpWidget(wrap(HomeScreen(api: fakeApi(), store: store)));
+      await tester.pumpWidget(wrap(AppShell(api: fakeApi(), store: store)));
       await searchFor(tester, 'inception');
 
-      expect(find.text('In your list'), findsOneWidget);
+      // The score badge sits on the card, so a rated movie is obvious in the
+      // grid without opening it.
+      expect(find.text('9'), findsOneWidget);
     });
-  });
 
-  group('details', () {
-    testWidgets('a result opens its details screen on a phone', (tester) async {
+    testWidgets('a wide window lays the grid out in more columns', (
+      tester,
+    ) async {
+      surface(tester, const Size(1400, 1000));
       await tester.pumpWidget(
-        wrap(HomeScreen(api: fakeApi(), store: WatchedStore())),
+        wrap(AppShell(api: fakeApi(), store: WatchedStore())),
       );
       await searchFor(tester, 'inception');
 
-      await tester.tap(find.text('Inception'));
-      await tester.pumpAndSettle();
+      final grid = tester.widget<SliverGrid>(find.byType(SliverGrid).first);
+      final delegate =
+          grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+      expect(delegate.crossAxisCount, greaterThan(3));
+    });
+  });
+
+  group('movie page', () {
+    testWidgets('a result opens as its own page', (tester) async {
+      surface(tester, const Size(390, 1400));
+      await tester.pumpWidget(
+        wrap(AppShell(api: fakeApi(), store: WatchedStore())),
+      );
+      await searchFor(tester, 'inception');
+      await openFirstResult(tester);
 
       expect(find.text('8.8'), findsOneWidget);
       expect(find.text('74'), findsOneWidget); // Metascore
       expect(find.text('PG-13'), findsOneWidget);
       expect(find.text('Sci-Fi'), findsOneWidget);
-      expect(find.text('Christopher Nolan'), findsOneWidget);
+      expect(find.text('Back'), findsOneWidget);
     });
 
     testWidgets('rating a movie adds it and confirms with a snackbar', (
       tester,
     ) async {
+      surface(tester, const Size(390, 1400));
       final store = WatchedStore();
-      await tester.pumpWidget(wrap(HomeScreen(api: fakeApi(), store: store)));
+      await tester.pumpWidget(wrap(AppShell(api: fakeApi(), store: store)));
       await searchFor(tester, 'inception');
+      await openFirstResult(tester);
 
-      await tester.tap(find.text('Inception'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Pick a rating first'), findsOneWidget);
+      expect(find.text('Pick a rating to continue'), findsOneWidget);
       await tester.tap(ratingStars().at(7)); // the 8th star
       await tester.pumpAndSettle();
       expect(find.text('Great'), findsOneWidget);
 
-      await tester.tap(find.text('Add to watched'));
+      await tester.tap(find.text('Add to my list'));
       await tester.pumpAndSettle();
 
       expect(store.movies, hasLength(1));
@@ -222,21 +252,36 @@ void main() {
       expect(store.movies.single.addedAt, isNotNull);
       expect(find.textContaining('added to your list'), findsOneWidget);
     });
+
+    testWidgets('a movie already rated offers removal instead', (tester) async {
+      surface(tester, const Size(390, 1400));
+      final store = WatchedStore();
+      await store.add(watchedMovie(imdbID: 'tt1375666', title: 'Inception'));
+
+      await tester.pumpWidget(wrap(AppShell(api: fakeApi(), store: store)));
+      await searchFor(tester, 'inception');
+      await openFirstResult(tester);
+
+      expect(find.text('out of 10'), findsOneWidget);
+      await tester.tap(find.text('Remove from list'));
+      await tester.pumpAndSettle();
+
+      expect(store.movies, isEmpty);
+    });
   });
 
-  group('watched list', () {
+  group('my list', () {
     testWidgets('removing a movie offers an undo that restores it', (
       tester,
     ) async {
+      surface(tester, const Size(390, 1000));
       final store = WatchedStore();
       await store.add(watchedMovie());
       await store.add(watchedMovie(imdbID: 'tt0816692', title: 'Interstellar'));
 
-      await tester.pumpWidget(wrap(HomeScreen(api: fakeApi(), store: store)));
-      await tester.pumpAndSettle();
+      await tester.pumpWidget(wrap(AppShell(api: fakeApi(), store: store)));
+      await goToList(tester);
 
-      await tester.ensureVisible(find.byTooltip('Remove The Matrix'));
-      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Remove The Matrix'));
       await tester.pumpAndSettle();
       expect(store.movies, hasLength(1));
@@ -250,14 +295,15 @@ void main() {
     });
 
     testWidgets('sorting reorders the list', (tester) async {
+      surface(tester, const Size(390, 1000));
       final store = WatchedStore();
       await store.add(watchedMovie(title: 'Zodiac', userRating: 6));
       await store.add(
         watchedMovie(imdbID: 'tt0816692', title: 'Alien', userRating: 10),
       );
 
-      await tester.pumpWidget(wrap(HomeScreen(api: fakeApi(), store: store)));
-      await tester.pumpAndSettle();
+      await tester.pumpWidget(wrap(AppShell(api: fakeApi(), store: store)));
+      await goToList(tester);
 
       expect(store.sorted.first.title, 'Zodiac'); // insertion order, no dates
 
@@ -273,35 +319,32 @@ void main() {
     testWidgets('shows total watch time rather than an average', (
       tester,
     ) async {
+      surface(tester, const Size(390, 1000));
       final store = WatchedStore();
       await store.add(watchedMovie(runtime: 136));
       await store.add(
         watchedMovie(imdbID: 'tt0816692', title: 'Interstellar', runtime: 169),
       );
 
-      await tester.pumpWidget(wrap(HomeScreen(api: fakeApi(), store: store)));
-      await tester.pumpAndSettle();
+      await tester.pumpWidget(wrap(AppShell(api: fakeApi(), store: store)));
+      await goToList(tester);
 
       expect(find.text('5h 5m'), findsOneWidget);
+      expect(find.text('2 movies rated'), findsOneWidget);
     });
-  });
 
-  testWidgets('wide layout puts both panels side by side', (tester) async {
-    tester.view.physicalSize = const Size(1400, 1000);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.reset);
+    testWidgets('an empty list points back at Discover', (tester) async {
+      surface(tester, const Size(390, 844));
+      await tester.pumpWidget(
+        wrap(AppShell(api: fakeApi(), store: WatchedStore())),
+      );
+      await goToList(tester);
 
-    await tester.pumpWidget(
-      wrap(
-        HomeScreen(api: fakeApi(), store: WatchedStore()),
-        size: const Size(1400, 1000),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('SEARCH RESULTS'), findsOneWidget);
-    expect(find.text('YOUR WATCHED LIST'), findsOneWidget);
-    expect(find.text('Find something to watch'), findsOneWidget);
+      expect(find.text('Your list is empty'), findsOneWidget);
+      await tester.tap(find.text('Find a movie'));
+      await tester.pumpAndSettle();
+      expect(find.text('What are you watching tonight?'), findsOneWidget);
+    });
   });
 
   group('store', () {
