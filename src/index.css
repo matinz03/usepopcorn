@@ -8,6 +8,9 @@
   --color-background-900: #212529;
   --color-red: #fa5252;
   --color-red-dark: #e03131;
+
+  /* Page gutter, tightened on small screens so content keeps its width. */
+  --gutter: 2.4rem;
 }
 
 * {
@@ -18,6 +21,7 @@
 
 html {
   font-size: 62.5%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -26,7 +30,27 @@ body {
 
   color: var(--color-text);
   background-color: var(--color-background-900);
-  padding: 2.4rem;
+  padding: var(--gutter);
+  padding-top: calc(var(--gutter) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+  padding-left: calc(var(--gutter) + env(safe-area-inset-left, 0px));
+  padding-right: calc(var(--gutter) + env(safe-area-inset-right, 0px));
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  /* Fills the viewport without hard-coding the nav height, so the panels can
+     flex instead of relying on a calc() that breaks at other sizes. */
+  min-height: calc(100dvh - 2 * var(--gutter));
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
 }
 
 /* ******* */
@@ -35,26 +59,35 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  height: 7.2rem;
-  padding: 0 3.2rem;
+  gap: 1.2rem;
+  min-height: 7.2rem;
+  padding: 1.2rem 3.2rem;
   background-color: var(--color-primary);
   border-radius: 0.9rem;
+  flex-shrink: 0;
 }
 
 .main {
-  margin-top: 2.4rem;
-  height: calc(100vh - 7.2rem - 3 * 2.4rem);
+  margin-top: var(--gutter);
+  flex: 1;
+  min-height: 0;
   display: flex;
-  gap: 2.4rem;
+  gap: var(--gutter);
   justify-content: center;
 }
 
 .box {
   width: 42rem;
   max-width: 42rem;
+  flex: 1 1 42rem;
+  min-width: 0;
   background-color: var(--color-background-500);
   border-radius: 0.9rem;
-  overflow: scroll;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   position: relative;
 }
 
@@ -63,13 +96,15 @@ body {
   text-transform: uppercase;
   font-size: 2rem;
   font-weight: 600;
-  margin: 4.8rem;
+  margin: 4.8rem 2.4rem;
 }
 
-.error {
+.error,
+.empty {
   text-align: center;
-  font-size: 2rem;
-  padding: 4.8rem;
+  font-size: 1.8rem;
+  padding: 4.8rem 2.4rem;
+  line-height: 1.4;
 }
 
 /* ******* */
@@ -78,16 +113,19 @@ body {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  min-width: 0;
 }
 
 .logo span {
   font-size: 3.2rem;
+  line-height: 1;
 }
 
 .logo h1 {
   font-size: 2.4rem;
   font-weight: 600;
   color: #fff;
+  white-space: nowrap;
 }
 
 .search {
@@ -96,12 +134,12 @@ body {
   padding: 1.1rem 1.6rem;
   font-size: 1.8rem;
   border-radius: 0.7rem;
-  width: 40rem;
+  width: 100%;
+  max-width: 40rem;
   transition: all 0.3s;
   color: var(--color-text);
-
-  /* background-color: var(--color-background-900); */
   background-color: var(--color-primary-light);
+  min-width: 0;
 }
 
 .search::placeholder {
@@ -117,6 +155,7 @@ body {
 .num-results {
   justify-self: end;
   font-size: 1.8rem;
+  white-space: nowrap;
 }
 
 .btn-toggle {
@@ -133,16 +172,15 @@ body {
   font-weight: bold;
   cursor: pointer;
   z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
 }
 
 .list {
   list-style: none;
   padding: 0.8rem 0;
-  overflow-y: hidden;
-}
-
-.list-watched {
-  height: calc(100% - 9rem);
 }
 
 .list li {
@@ -161,25 +199,35 @@ body {
 .list.list-movies li {
   cursor: pointer;
   transition: all 0.3s;
+  touch-action: manipulation;
 }
 
-.list.list-movies li:hover {
+.list.list-movies li:hover,
+.list.list-movies li:focus-visible {
   background-color: var(--color-background-100);
 }
 
 .list img {
   width: 100%;
+  height: auto;
   grid-row: 1 / -1;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 0.3rem;
+  background-color: var(--color-background-100);
 }
 
 .list h3 {
   font-size: 1.8rem;
+  /* Long titles used to push the row wide enough to scroll the page sideways. */
+  overflow-wrap: anywhere;
 }
 
 .list div {
   display: flex;
   align-items: center;
   gap: 2.4rem;
+  flex-wrap: wrap;
 }
 
 .list p {
@@ -202,6 +250,10 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
 }
 
 .btn-delete:hover {
@@ -229,6 +281,8 @@ body {
   gap: 2.4rem;
   font-size: 1.6rem;
   font-weight: 600;
+  flex-wrap: wrap;
+  row-gap: 0.8rem;
 }
 
 .summary p {
@@ -257,14 +311,18 @@ body {
 
 .details img {
   width: 33%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .details-overview {
   width: 100%;
+  min-width: 0;
   padding: 2.4rem 3rem;
   background-color: var(--color-background-100);
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 1.4rem;
 }
 
@@ -272,12 +330,14 @@ body {
   font-size: 2.4rem;
   margin-bottom: 0.4rem;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .details-overview p {
   display: flex;
   align-items: center;
   gap: 0.8rem;
+  flex-wrap: wrap;
 }
 
 .rating {
@@ -301,6 +361,7 @@ body {
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s;
+  touch-action: manipulation;
 }
 
 .btn-add:hover {
@@ -325,7 +386,6 @@ body {
   aspect-ratio: 1;
   border-radius: 50%;
   border: none;
-  /* background-color: var(--color-text); */
   background-color: #fff;
   color: var(--color-background-500);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8);
@@ -337,6 +397,209 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: manipulation;
+}
+
+/* ===== Responsive ===================================================== */
+
+/* Tablets / small laptops: let the two panels share the width fluidly. */
+@media (max-width: 1000px) {
+  .box {
+    flex: 1 1 0;
+    max-width: none;
+    width: auto;
+  }
+
+  .list li {
+    padding: 1.6rem 2.4rem;
+    column-gap: 1.6rem;
+  }
+
+  .details section {
+    padding: 2.4rem;
+  }
+}
+
+/* Phones and small tablets: stack the panels and let the page scroll. */
+@media (max-width: 700px) {
+  :root {
+    --gutter: 1.2rem;
+  }
+
+  #root {
+    min-height: 0;
+  }
+
+  .nav-bar {
+    /* Logo and result count on one row, full-width search underneath. */
+    grid-template-columns: 1fr auto;
+    padding: 1.2rem 1.6rem;
+    row-gap: 1.2rem;
+  }
+
+  .logo {
+    order: 1;
+  }
+
+  .num-results {
+    order: 2;
+    font-size: 1.5rem;
+  }
+
+  .search {
+    order: 3;
+    grid-column: 1 / -1;
+    max-width: none;
+    justify-self: stretch;
+    /* 16px keeps iOS Safari from zooming in when the field takes focus. */
+    font-size: 1.6rem;
+  }
+
+  .main {
+    flex-direction: column;
+    height: auto;
+    gap: 1.2rem;
+  }
+
+  .box {
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: none;
+    /* Neither panel may eat the whole screen; each scrolls internally. */
+    max-height: 70dvh;
+  }
+
+  .logo h1 {
+    font-size: 2rem;
+  }
+
+  .logo span {
+    font-size: 2.6rem;
+  }
+
+  .details header {
+    flex-direction: column;
+  }
+
+  .details img {
+    width: 100%;
+    max-height: 38dvh;
+    object-position: top;
+  }
+
+  .details-overview {
+    padding: 1.6rem 2rem;
+  }
+
+  .details section {
+    padding: 2rem 1.6rem;
+  }
+
+  .summary {
+    padding: 1.6rem 2rem;
+  }
+
+  .list li {
+    padding: 1.2rem 1.6rem;
+    column-gap: 1.2rem;
+    grid-template-columns: 3.6rem 1fr;
+  }
+
+  .list h3 {
+    font-size: 1.6rem;
+    /* Keep the delete button from overlapping the title. */
+    padding-right: 3.2rem;
+  }
+
+  .list div {
+    gap: 1.2rem;
+  }
+
+  .btn-delete {
+    right: 1.6rem;
+  }
+}
+
+/* Small phones (iPhone SE and friends). */
+@media (max-width: 400px) {
+  .nav-bar {
+    padding: 1.2rem;
+  }
+
+  .logo h1 {
+    font-size: 1.8rem;
+  }
+
+  .num-results {
+    font-size: 1.4rem;
+  }
+
+  .list li {
+    font-size: 1.4rem;
+    padding: 1.2rem;
+  }
+
+  .list h3 {
+    font-size: 1.5rem;
+  }
+
+  .summary div,
+  .summary p {
+    font-size: 1.4rem;
+    gap: 0.6rem;
+  }
+
+  .summary div {
+    column-gap: 1.6rem;
+  }
+
+  .details-overview h2 {
+    font-size: 2rem;
+  }
+}
+
+/* Landscape phones: the viewport is short, so cap panel height by height. */
+@media (max-height: 500px) and (max-width: 900px) {
+  .box {
+    max-height: 80dvh;
+  }
+
+  .details img {
+    max-height: 50dvh;
+  }
+}
+
+/* Touch devices: grow the tap targets to a comfortable size. */
+@media (pointer: coarse) {
+  .btn-toggle {
+    height: 3.2rem;
+    font-size: 1.8rem;
+  }
+
+  .btn-delete {
+    height: 2.8rem;
+    font-size: 1.6rem;
+  }
+
+  .btn-add {
+    padding: 1.4rem;
+    font-size: 1.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .search:focus {
+    transform: none;
+  }
 }
 
 /*
@@ -345,37 +608,4 @@ SPACING SYSTEM (px)
 
 FONT SIZE SYSTEM (px)
 10 / 12 / 14 / 16 / 18 / 20 / 24 / 30 / 36 / 44 /52 / 62 / 74 / 86 / 98
-*/
-
-/*
-FULL STAR
-
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 20 20"
-  fill="#000"
-  stroke="#000"
->
-  <path
-    d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
-  />
-</svg>
-
-
-EMPTY STAR
-
-<svg
-  xmlns="http://www.w3.org/2000/svg"
-  fill="none"
-  viewBox="0 0 24 24"
-  stroke="#000"
->
-  <path
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    strokeWidth="{2}"
-    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-  />
-</svg>
-
 */

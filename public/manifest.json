@@ -1,0 +1,17 @@
+{
+  "short_name": "usePopcorn",
+  "name": "usePopcorn - movie ratings",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#6741d9",
+  "background_color": "#212529"
+}
