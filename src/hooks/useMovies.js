@@ -1,4 +1,4 @@
-import { KEY } from "./config";
+import { KEY } from "../lib/config";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const MIN_QUERY_LENGTH = 3;

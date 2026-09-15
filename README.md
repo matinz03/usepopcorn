@@ -59,12 +59,23 @@ npm start
 
 ---
 
+## 🗺️ Pages
+
+| Route | Page |
+| --- | --- |
+| `/` | Discover - search results as a grid of posters. The query lives in the URL as `?q=`, so a search is shareable and the back button walks through it. |
+| `/movie/:id` | One movie, full width, with its own backdrop, genres, scores and rating card. |
+| `/list` | The watched list with its stats and sorting. |
+
+---
+
 ## 📱 Responsive
 
-The web app works from 320px up. Below 900px the two panels stack and each
-scrolls internally, the nav bar reflows to a logo row plus a full-width search
-field, the ten rating stars shrink to fit, tap targets grow on touch pointers,
-and safe-area insets keep content clear of notches.
+The web app works from 320px up: two grid columns on the narrowest phone, six
+at 1440. Below 880px the header's destinations move to a bottom tab bar under
+the thumb, the ten rating stars flex to share the row, tap targets grow on
+touch pointers, and safe-area insets keep content clear of notches. No panel
+nests its own scrollbar, so no row is ever sliced at a boundary.
 
 ---
 
@@ -73,13 +84,12 @@ and safe-area insets keep content clear of notches.
 | Key | Action |
 | --- | --- |
 | <kbd>/</kbd> | Focus the search field |
-| <kbd>↑</kbd> <kbd>↓</kbd> | Move through the results |
-| <kbd>↵</kbd> | Open the focused movie |
-| <kbd>esc</kbd> | Close details, then clear the search |
+| <kbd>⌘</kbd>/<kbd>ctrl</kbd> + <kbd>K</kbd> | Select the whole query |
+| <kbd>esc</kbd> | Clear the search, then leave the field |
+| <kbd>tab</kbd> | Move through the result cards |
 
-The search field is a combobox driving the results listbox, so a screen reader
-announces each result as the arrow keys move over it. The star rating is a
-single focusable slider that responds to arrow keys, Home and End.
+The star rating is a single focusable slider that responds to arrow keys, Home
+and End, rather than ten separate tab stops.
 
 ---
 
