@@ -1,60 +1,90 @@
 import { memo, useState } from "react";
 import PropTypes from "prop-types";
 
-const containerStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "16px",
-  flexWrap: "wrap",
-};
-const starContainerStyle = {
-  display: "flex",
-};
+const LABELS = [
+  "Terrible",
+  "Bad",
+  "Poor",
+  "Weak",
+  "Okay",
+  "Fine",
+  "Good",
+  "Great",
+  "Excellent",
+  "Masterpiece",
+];
 
-function StarRating({
-  maxRating = 5,
-  color = "yellow",
-  size = 24,
-  className = "",
-  messages = [],
-  defaultRating = 0,
-  onSetRated,
-}) {
-  const [filled, setFilled] = useState(defaultRating);
-  const [tempFilling, setTempFilling] = useState(0);
+function StarRating({ maxRating = 10, defaultRating = 0, onSetRated }) {
+  const [rating, setRating] = useState(defaultRating);
+  const [preview, setPreview] = useState(0);
 
-  const textStyle = {
-    lineHeight: "1",
-    margin: "0",
-    fontSize: `${size / 1.8}px`,
-  };
+  const shown = preview || rating;
 
-  function handleFilled(rate) {
-    setFilled(rate);
-    onSetRated?.(rate);
+  function rate(value) {
+    const next = Math.min(Math.max(value, 1), maxRating);
+    setRating(next);
+    onSetRated?.(next);
+  }
+
+  function onKeyDown(event) {
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") {
+      event.preventDefault();
+      rate((rating || 0) + 1);
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
+      event.preventDefault();
+      rate((rating || 2) - 1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      rate(1);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      rate(maxRating);
+    }
   }
 
   return (
-    <div style={containerStyle}>
-      <div style={starContainerStyle}>
+    <div className="rating">
+      {/* One focusable slider rather than ten tab stops: arrow keys adjust it,
+          which is both faster and what a screen reader announces sensibly. */}
+      <div
+        className="rating__stars"
+        role="slider"
+        tabIndex={0}
+        aria-label="Your rating"
+        aria-valuemin={1}
+        aria-valuemax={maxRating}
+        aria-valuenow={rating || undefined}
+        aria-valuetext={rating ? `${rating} of ${maxRating}` : "Not rated"}
+        onKeyDown={onKeyDown}
+        onMouseLeave={() => setPreview(0)}
+      >
         {Array.from({ length: maxRating }, (_, i) => (
-          <Star
+          <button
             key={i}
-            onRate={() => handleFilled(i + 1)}
-            full={tempFilling ? tempFilling >= i + 1 : filled >= i + 1}
-            onHoverIn={() => setTempFilling(i + 1)}
-            onHoverOut={() => setTempFilling(0)}
-            color={color}
-            size={size}
-            className={className}
-            label={`Rate ${i + 1} out of ${maxRating}`}
-          />
+            type="button"
+            className={`star ${shown >= i + 1 ? "star--full" : ""}`}
+            style={{ "--star-index": i }}
+            tabIndex={-1}
+            aria-hidden="true"
+            onClick={() => rate(i + 1)}
+            onMouseEnter={() => setPreview(i + 1)}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2.6l2.9 5.88 6.49.95-4.7 4.58 1.11 6.46L12 17.42l-5.8 3.05 1.1-6.46-4.69-4.58 6.49-.95L12 2.6z" />
+            </svg>
+          </button>
         ))}
       </div>
-      <p style={textStyle}>
-        {messages.length === maxRating
-          ? messages[tempFilling ? tempFilling - 1 : filled - 1]
-          : tempFilling || filled || ""}
+
+      <p className="rating__label">
+        {shown ? (
+          <>
+            <strong>{shown}</strong>
+            <span>{LABELS[Math.round((shown / maxRating) * 10) - 1]}</span>
+          </>
+        ) : (
+          <span className="rating__hint">Pick a score from 1 to {maxRating}</span>
+        )}
       </p>
     </div>
   );
@@ -62,77 +92,8 @@ function StarRating({
 
 StarRating.propTypes = {
   maxRating: PropTypes.number,
-  color: PropTypes.string,
-  size: PropTypes.number,
-  className: PropTypes.string,
-  messages: PropTypes.array,
   defaultRating: PropTypes.number,
   onSetRated: PropTypes.func,
 };
-
-function Star({
-  full,
-  onRate,
-  onHoverIn,
-  onHoverOut,
-  color,
-  size,
-  className,
-  label,
-}) {
-  const starStyle = {
-    // Ten stars at a fixed 24px overflow a 320px-wide phone, so let them shrink
-    // with the viewport while keeping the desktop size as the ceiling.
-    width: `min(${size}px, 7.5vw)`,
-    height: `min(${size}px, 7.5vw)`,
-    display: "block",
-    cursor: "pointer",
-    touchAction: "manipulation",
-  };
-
-  return (
-    <span
-      role="button"
-      aria-label={label}
-      tabIndex={0}
-      style={starStyle}
-      onClick={onRate}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onRate();
-        }
-      }}
-      onMouseEnter={onHoverIn}
-      onMouseLeave={onHoverOut}
-      className={className}
-    >
-      {full ? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill={color}
-          stroke={color}
-        >
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ) : (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke={color}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-          />
-        </svg>
-      )}
-    </span>
-  );
-}
 
 export default memo(StarRating);
